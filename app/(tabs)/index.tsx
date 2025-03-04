@@ -11,7 +11,7 @@ export default function HomeScreen() {
             headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
             headerImage={
                 <Image
-                    source={require('@/assets/images/alien.png')}
+                    source={require('@/assets/images/robot-2.png')}
                     style={styles.reactLogo}
                 />
             }>
