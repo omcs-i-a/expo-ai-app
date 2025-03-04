@@ -8,6 +8,14 @@
 - チャットの内容に応じて、「学び」タブに情報をまとめたり、「プロ」タブに遷移して専門家に相談したりできます。
 - Pro プランの価格に関する質問には、RAG (Retrieval-Augmented Generation) システムを使って回答します。
 
+## 開発について
+
+機能開発を行う際は、develop ブランチから新しい機能ブランチを作成します (例: git checkout -b feature/new-feature develop)。
+
+機能ブランチでの作業が完了したら、develop ブランチにプルリクエストを作成してマージします。
+
+develop ブランチが安定したら、main ブランチにマージしてリリースして、vercelに自動デプロイします。
+
 ## ディレクトリ構造
 
 my-expo-app/
