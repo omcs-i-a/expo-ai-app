@@ -1,4 +1,6 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -6,6 +8,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
+    const router = useRouter();
+
     return (
         <ParallaxScrollView
             headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -44,20 +48,41 @@ export default function HomeScreen() {
                 <ThemedText type="subtitle">クイックアクセス</ThemedText>
 
                 <ThemedView style={styles.cardContainer}>
-                    {/* チャットカード */}
-                    <ThemedView style={[styles.navCard, { backgroundColor: '#A1CEDC' }]}>
-                        <ThemedText type="defaultSemiBold" style={styles.navCardText}>チャット</ThemedText>
-                    </ThemedView>
+                    {/* チャットカード - タップ可能に変更 */}
+                    <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => router.push('/chat')}
+                        style={{ flex: 1 }}
+                    >
+                        <ThemedView style={[styles.navCard, { backgroundColor: '#A1CEDC' }]}>
+                            <Ionicons name="chatbubble-ellipses" size={24} color="#2A5D6C" />
+                            <ThemedText type="defaultSemiBold" style={styles.navCardText}>チャット</ThemedText>
+                        </ThemedView>
+                    </TouchableOpacity>
 
-                    {/* 学びカード */}
-                    <ThemedView style={[styles.navCard, { backgroundColor: '#B8D8BE' }]}>
-                        <ThemedText type="defaultSemiBold" style={styles.navCardText}>学び</ThemedText>
-                    </ThemedView>
+                    {/* 学びカード - 同様に変更 */}
+                    <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => router.push('/(tabs)/explore')}
+                        style={{ flex: 1 }}
+                    >
+                        <ThemedView style={[styles.navCard, { backgroundColor: '#B8D8BE' }]}>
+                            <Ionicons name="book" size={24} color="#3B6844" />
+                            <ThemedText type="defaultSemiBold" style={styles.navCardText}>学び</ThemedText>
+                        </ThemedView>
+                    </TouchableOpacity>
 
-                    {/* Pro相談カード */}
-                    <ThemedView style={[styles.navCard, { backgroundColor: '#F2D5A8' }]}>
-                        <ThemedText type="defaultSemiBold" style={styles.navCardText}>Pro相談</ThemedText>
-                    </ThemedView>
+                    {/* Pro相談カード - 同様に変更 */}
+                    <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => router.push('/explore')}
+                        style={{ flex: 1 }}
+                    >
+                        <ThemedView style={[styles.navCard, { backgroundColor: '#F2D5A8' }]}>
+                            <Ionicons name="person" size={24} color="#8A652D" />
+                            <ThemedText type="defaultSemiBold" style={styles.navCardText}>Pro相談</ThemedText>
+                        </ThemedView>
+                    </TouchableOpacity>
                 </ThemedView>
             </ThemedView>
 
@@ -138,6 +163,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 8,
         elevation: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     navCardText: {
         fontSize: 16,

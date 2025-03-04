@@ -46,6 +46,13 @@ export default function TabLayout() {
                             tabBarIcon: ({ color }) => <IconSymbol size={28} name="safari.fill" color={color} />,
                         }}
                     />
+                    <Tabs.Screen
+                        name="chat" // またはチャット画面のファイル名 (例: chat.js なら name="chat")
+                        options={{
+                            title: 'チャット', // タブに表示されるタイトル
+                            tabBarIcon: ({ color }) => <IconSymbol size={28} name="message.fill" color={color} />,
+                        }}
+                    />
                 </Tabs>
             </View>
         </View>

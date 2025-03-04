@@ -7,20 +7,30 @@ const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
 export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+    light: {
+        text: '#11181C',
+        background: '#fff',
+        tint: tintColorLight,
+        icon: '#687076',
+        tabIconDefault: '#687076',
+        tabIconSelected: tintColorLight,
+        primary: '#007AFF', // primary を追加
+        buttonText: '#fff', // buttonText を追加
+        secondary: '#696969', // 追加: セカンダリカラー
+        borderColor: '#555', // 追加: ボーダーカラー (必要に応じて)
+        secondaryText: '#999', // 追加: セカンダリテキストカラー
+    },
+    dark: {
+        text: '#ECEDEE',
+        background: '#151718',
+        tint: tintColorDark,
+        icon: '#9BA1A6',
+        tabIconDefault: '#9BA1A6',
+        tabIconSelected: tintColorDark,
+        primary: '#007AFF', // primary を追加
+        buttonText: '#fff', // buttonText を追加
+        secondary: '#696969', // 追加: セカンダリカラー
+        borderColor: '#555', // 追加: ボーダーカラー (必要に応じて)
+        secondaryText: '#999', // 追加: セカンダリテキストカラー
+    },
 };
