@@ -14,6 +14,7 @@ import {
 import OpenAI from 'openai';
 import Constants from 'expo-constants';
 import { SYSTEM_PROMPT } from '@/prompts/systemPrompts';
+import { Ionicons } from '@expo/vector-icons'; // 追加: Ioniconsをインポート
 
 interface ChatMessage {
     id: string;
@@ -25,6 +26,7 @@ const OPENAI_API_KEY = Constants.expoConfig?.extra?.openAIApiKey;
 
 const openai = new OpenAI({
     apiKey: OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true, // ブラウザ環境での実行を許可
 });
 
 export default function ChatScreen() {
@@ -161,7 +163,7 @@ export default function ChatScreen() {
                             {loading ? ( // ローディングインジケーターを表示
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
-                                <Text style={styles.buttonText}>送信</Text>
+                                <Ionicons name="send" size={22} color="#fff" />
                             )}
                         </TouchableOpacity>
                     </View>
@@ -232,14 +234,12 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: '#007bff',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 20,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
     },
     messageText: {
         fontSize: 16,

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Platform, View, StyleSheet, useWindowDimensions } from 'react-native';
 // import { useMediaQuery } from 'react-responsive';
 import { usePathname } from 'expo-router';
@@ -15,21 +15,41 @@ export default function TabLayout() {
     const colorScheme = useColorScheme();
     const pathname = usePathname();
     const { width } = useWindowDimensions();
+    const [isLayoutReady, setIsLayoutReady] = useState(false);
 
     // Web版のみ、横幅が768px以上ならサイドバーを表示
-    const isWebWithSidebar = Platform.OS === 'web' && width >= 768;
+    const shouldShowSidebar = Platform.OS === 'web' && width >= 768;
+    const [showSidebar, setShowSidebar] = useState(shouldShowSidebar);
+
+    // マウント時に一度だけレイアウトを確定
+    useEffect(() => {
+        setShowSidebar(shouldShowSidebar);
+        setIsLayoutReady(true);
+    }, [shouldShowSidebar]);
+
+    // ウィンドウサイズ変更時のサイドバー表示制御（サイズ変更対応）
+    useEffect(() => {
+        if (isLayoutReady) {
+            setShowSidebar(shouldShowSidebar);
+        }
+    }, [width, isLayoutReady, shouldShowSidebar]);
+
+    // レイアウトが準備できるまでは何も表示しない
+    if (!isLayoutReady && Platform.OS === 'web') {
+        return <View style={styles.container} />;
+    }
 
     return (
         <View style={styles.container}>
-            {isWebWithSidebar && <Sidebar />}
+            {showSidebar && <Sidebar />}
             <View style={styles.content}>
                 <Tabs
                     screenOptions={{
                         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
                         headerShown: false,
-                        tabBarButton: isWebWithSidebar ? () => null : HapticTab, // Webではタブを非表示
-                        tabBarBackground: isWebWithSidebar ? undefined : TabBarBackground,
-                        tabBarStyle: isWebWithSidebar ? { display: 'none' } : styles.tabBar,
+                        tabBarButton: showSidebar ? () => null : HapticTab, // Webではタブを非表示
+                        tabBarBackground: showSidebar ? undefined : TabBarBackground,
+                        tabBarStyle: showSidebar ? { display: 'none' } : styles.tabBar,
                     }}
                 >
                     <Tabs.Screen
