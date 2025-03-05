@@ -29,7 +29,7 @@ const openai = new OpenAI({
 
 export default function ChatScreen() {
     const [messages, setMessages] = useState<ChatMessage[]>([
-        { id: '1', sender: 'bot', message: 'こんにちは！' },
+        { id: '1', sender: 'bot', message: 'こんにちは！私はビジネスコンセプターです。あなたのビジネスアイデアを磨き上げていきましょう。' },
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false); // 追加: ローディング状態
@@ -39,31 +39,38 @@ export default function ChatScreen() {
     const handleSend = async () => {
         if (input.trim() === '') return;
 
+        // ユーザーメッセージを作成
         const userMessage: ChatMessage = {
             id: Date.now().toString(),
             sender: 'user',
             message: input,
         };
 
-        setMessages((prevMessages) => [...prevMessages, userMessage]);
-        setInput('');
-        setLoading(true); // ローディング開始
+        // ローカル変数に最新のメッセージ配列を保持（APIリクエスト用）
+        const updatedMessages = [...messages, userMessage];
 
-        // 「考え中...」メッセージを追加
+        // UIを更新
+        setMessages(updatedMessages);
+        setInput('');
+        setLoading(true);
+
+        // ローディングメッセージ
         const loadingMessageId = (Date.now() + 1).toString();
         const loadingMessage: ChatMessage = {
             id: loadingMessageId,
             sender: 'bot',
             message: '考え中...',
         };
-        setMessages((prevMessages) => [...prevMessages, loadingMessage]);
+
+        setMessages([...updatedMessages, loadingMessage]);
 
         try {
+            // updatedMessagesを使用して最新のメッセージを含める
             const response = await openai.chat.completions.create({
-                model: "gpt-4o",
+                model: "gpt-3.5-turbo",
                 messages: [
                     { role: "system" as const, content: SYSTEM_PROMPT },
-                    ...messages.map(msg => ({
+                    ...updatedMessages.map(msg => ({
                         role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
                         content: msg.message
                     }))
@@ -71,7 +78,7 @@ export default function ChatScreen() {
                 temperature: 0.7,
             });
 
-            // 「考え中...」メッセージを実際の応答で置き換え
+            // 応答処理
             const botReply = response.choices[0].message.content || '応答がありません';
             setMessages((prevMessages) =>
                 prevMessages.map(msg =>
@@ -81,9 +88,8 @@ export default function ChatScreen() {
                 )
             );
         } catch (error) {
+            // エラー処理
             console.error('OpenAI API error:', error);
-
-            // エラー時は「考え中...」メッセージをエラーメッセージに置き換え
             setMessages((prevMessages) =>
                 prevMessages.map(msg =>
                     msg.id === loadingMessageId
@@ -92,9 +98,8 @@ export default function ChatScreen() {
                 )
             );
         } finally {
-            setLoading(false); // ローディング終了
+            setLoading(false);
         }
-        // messageListRef.current?.scrollToEnd({ animated: true });
     };
     useEffect(() => {
         if (messages.length > 0) {
@@ -103,6 +108,23 @@ export default function ChatScreen() {
             }, 100); // 少し遅延させてレイアウト更新後にスクロールさせる
         }
     }, [messages]);
+
+    const renderMessage = ({ item }: { item: ChatMessage }) => {
+        const isLoading = item.message === '考え中...' && loading;
+
+        return (
+            <View style={item.sender === 'user' ? styles.userMessage : styles.botMessage}>
+                {isLoading ? (
+                    <View style={styles.loadingRow}>
+                        <Text style={styles.messageText}>考え中</Text>
+                        <ActivityIndicator size="small" color="#0084ff" style={styles.indicator} />
+                    </View>
+                ) : (
+                    <Text style={styles.messageText}>{item.message}</Text>
+                )}
+            </View>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -115,15 +137,7 @@ export default function ChatScreen() {
                     <FlatList
                         ref={messageListRef}
                         data={messages}
-                        renderItem={({ item }) => (
-                            <View
-                                style={
-                                    item.sender === 'user' ? styles.userMessage : styles.botMessage
-                                }
-                            >
-                                <Text style={styles.messageText}>{item.message}</Text>
-                            </View>
-                        )}
+                        renderItem={renderMessage}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.messageListContent}
                         showsVerticalScrollIndicator={true}
@@ -194,6 +208,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginBottom: 16,
         maxWidth: '80%',
+        minHeight: 40, // 高さを確保してインジケーターの表示を安定させる
     },
     inputContainer: {
         flexDirection: 'row',
@@ -228,5 +243,12 @@ const styles = StyleSheet.create({
     },
     messageText: {
         fontSize: 16,
+    },
+    loadingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    indicator: {
+        marginLeft: 8,
     },
 });
