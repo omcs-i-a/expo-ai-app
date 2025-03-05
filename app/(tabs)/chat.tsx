@@ -1,5 +1,4 @@
-// app/(tabs)/chat.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,8 +8,12 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableOpacity,
-    SafeAreaView, // SafeAreaView を追加
+    SafeAreaView,
+    ActivityIndicator, // 追加: ローディングインジケーター
 } from 'react-native';
+import OpenAI from 'openai';
+import Constants from 'expo-constants';
+import { SYSTEM_PROMPT } from '@/prompts/systemPrompts';
 
 interface ChatMessage {
     id: string;
@@ -18,62 +21,114 @@ interface ChatMessage {
     message: string;
 }
 
+const OPENAI_API_KEY = Constants.expoConfig?.extra?.openAIApiKey;
+
+const openai = new OpenAI({
+    apiKey: OPENAI_API_KEY,
+});
+
 export default function ChatScreen() {
     const [messages, setMessages] = useState<ChatMessage[]>([
         { id: '1', sender: 'bot', message: 'こんにちは！' },
     ]);
     const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(false); // 追加: ローディング状態
     const messageListRef = useRef<FlatList<ChatMessage> | null>(null);
 
-    const handleSend = () => {
+
+    const handleSend = async () => {
         if (input.trim() === '') return;
 
-        // 新しいメッセージを作成
-        const newMessage: ChatMessage = {
+        const userMessage: ChatMessage = {
             id: Date.now().toString(),
             sender: 'user',
-            message: input
+            message: input,
         };
 
-        // 新しいメッセージを配列の末尾に追加
-        setMessages(prevMessages => [...prevMessages, newMessage]);
-
-        // 入力欄をクリア
+        setMessages((prevMessages) => [...prevMessages, userMessage]);
         setInput('');
+        setLoading(true); // ローディング開始
 
-        // ボットの返信をシミュレート
-        setTimeout(() => {
-            const botReply: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                sender: 'bot',
-                message: 'これはボットの返信メッセージです。'
-            };
-            setMessages(prevMessages => [...prevMessages, botReply]);
-        }, 1000);
+        // 「考え中...」メッセージを追加
+        const loadingMessageId = (Date.now() + 1).toString();
+        const loadingMessage: ChatMessage = {
+            id: loadingMessageId,
+            sender: 'bot',
+            message: '考え中...',
+        };
+        setMessages((prevMessages) => [...prevMessages, loadingMessage]);
+
+        try {
+            const response = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    { role: "system" as const, content: SYSTEM_PROMPT },
+                    ...messages.map(msg => ({
+                        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+                        content: msg.message
+                    }))
+                ],
+                temperature: 0.7,
+            });
+
+            // 「考え中...」メッセージを実際の応答で置き換え
+            const botReply = response.choices[0].message.content || '応答がありません';
+            setMessages((prevMessages) =>
+                prevMessages.map(msg =>
+                    msg.id === loadingMessageId
+                        ? { ...msg, message: botReply }
+                        : msg
+                )
+            );
+        } catch (error) {
+            console.error('OpenAI API error:', error);
+
+            // エラー時は「考え中...」メッセージをエラーメッセージに置き換え
+            setMessages((prevMessages) =>
+                prevMessages.map(msg =>
+                    msg.id === loadingMessageId
+                        ? { ...msg, message: '申し訳ありません。エラーが発生しました。' }
+                        : msg
+                )
+            );
+        } finally {
+            setLoading(false); // ローディング終了
+        }
+        // messageListRef.current?.scrollToEnd({ animated: true });
     };
+    useEffect(() => {
+        if (messages.length > 0) {
+            setTimeout(() => {
+                messageListRef.current?.scrollToEnd({ animated: true });
+            }, 100); // 少し遅延させてレイアウト更新後にスクロールさせる
+        }
+    }, [messages]);
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined} // Android では padding は不要
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 style={styles.keyboardAvoidingView}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0} // 不要なオフセットを削除
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <View style={styles.container}>
                     <FlatList
+                        ref={messageListRef}
                         data={messages}
                         renderItem={({ item }) => (
                             <View
-                                style={item.sender === 'user' ? styles.userMessage : styles.botMessage}
+                                style={
+                                    item.sender === 'user' ? styles.userMessage : styles.botMessage
+                                }
                             >
                                 <Text style={styles.messageText}>{item.message}</Text>
                             </View>
                         )}
-                        keyExtractor={item => item.id}
-                        contentContainerStyle={styles.messageList}
-                        onContentSizeChange={() => messageListRef.current?.scrollToEnd({ animated: true })}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.messageListContent}
+                        showsVerticalScrollIndicator={true}
+                        onContentSizeChange={() => messageListRef.current?.scrollToEnd({ animated: false })}
                         onLayout={() => messageListRef.current?.scrollToEnd({ animated: false })}
-                        ref={messageListRef}
                     />
                     <View style={styles.inputContainer}>
                         <TextInput
@@ -82,9 +137,18 @@ export default function ChatScreen() {
                             onChangeText={setInput}
                             placeholder="メッセージを入力..."
                             placeholderTextColor="#999"
+                            editable={!loading} // ローディング中は編集不可
                         />
-                        <TouchableOpacity style={styles.button} onPress={handleSend}>
-                            <Text style={styles.buttonText}>送信</Text>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={handleSend}
+                            disabled={loading} // ローディング中は無効化
+                        >
+                            {loading ? ( // ローディングインジケーターを表示
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.buttonText}>送信</Text>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -110,12 +174,10 @@ const styles = StyleSheet.create({
     messageList: {
         width: '100%',
         flex: 1, //追加
-        padding: 20,
     },
     messageListContent: {
-        flexGrow: 1,
-        padding: 10,
-        justifyContent: 'flex-end',
+        padding: 20, // 下部に余白を追加してスクロール時に見えるようにする
+        flexGrow: 1, // FlatListが適切に拡張するように
     },
     userMessage: {
         alignSelf: 'flex-end',
